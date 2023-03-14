@@ -8,38 +8,35 @@ iv =  b'myiv123456789012'
 
 #iv = os.urandom(16)
 
-# Encrypt the input data
-def encrypt_file(input_file, output_file):
+# Cifrar el archivo de entrada
+def cifrar_archivo(input_file, output_file):
     cipher = AES.new(key, AES.MODE_CBC, iv)
+        # Abrimos el archivo y creamos el archivo de salida
     with open(input_file, 'rb') as f_in, open(output_file, 'wb') as f_out:
         while True:
+            # Leemos los datos de entrada
             data = f_in.read(16)
+            # En caso de ya no tener informacion del arhivo de entrada, acabos con el descifrado
             if not data:
                 break
+            
+            # Ciframos el texto y lo ponemos en el archivo de salida
             f_out.write(cipher.encrypt(pad(data, 16)))
 
 
-# Decrypt the contents of the input file and write the plaintext to the output file
-def decrypt_file(input_file, output_file):
+# Decifrar el contenido del archivo de entrada y escribirlo en el segundo argumento de la funcion
+def decifrar_archivo(input_file, output_file):
     cipher = AES.new(key, AES.MODE_CBC, iv)
+    # Abrimos el archivo y creamos el archivo de salida
     with open(input_file, 'rb') as f_in, open(output_file, 'wb') as f_out:
         while True:
+            # Leemos los datos de entrada
             data = f_in.read(16)
 
+            # En caso de ya no tener informacion del arhivo de entrada, acabos con el descifrado
             if not data:
                 break
 
-            # Decrypt the ciphertext and write it to the output file
+            # Decifrar el texto cifrado y escribirlo en el archivo de salida
             plaintext = unpad(cipher.decrypt(data), 16)
             f_out.write(plaintext)
-
-
-def cifrar(nombre_archivo) :
-    nuevo_nombre = nombre_archivo.split('.')
-    nuevo_nombre[0] = nuevo_nombre[0] + "-c."
-    nuevo_nombre = "".join(nuevo_nombre)
-
-
-    encrypt_file(nombre_archivo, nuevo_nombre)
-
-    decrypt_file(nuevo_nombre, "decrifrar.txt")

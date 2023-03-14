@@ -8,6 +8,8 @@ import threading
 import time
 
 import texto
+import imagen
+
 
 # Creamos la ventana de la aplicacion
 window = tk.Tk()
@@ -17,46 +19,82 @@ window.geometry("800x600")
 
 ruta_archivo = ""
 
-
 def limpiar_pantalla() :
     # Limpiamos la pantalla
     for widgets in window.winfo_children():
         widgets.destroy()
 
-
 def seleccionar_cifrado_descifrado(opcion, ruta) : 
 
+    if len(ruta) == 0 :
+        menu()
+        return''
+
+    # Primero obtenemos la extension del archivo con el cual vamos a trabajar
     extension = ruta.split('.')
     extension = extension[len(extension) - 1]
 
-    nombre_archivo = ruta.split('/')
-    nombre_archivo_entrada = nombre_archivo[len(nombre_archivo) - 1]
-    nombre_archivo = nombre_archivo_entrada.split('.')
+
+    # Luego, como queremos obtener el nombre del archivo, separamos la ruta 
+    ruta_separada = ruta.split('/')
+
+    # Obtenemos el nombre del archivo
+    archivo_entrada = ruta_separada[len(ruta_separada) - 1]
+    nombre_temporal = archivo_entrada.split('.')
+
+
+    # Como hay que indicar si el archivo es cifrado o descifrado le agregamos la letra correspondiente
+    temporal = ""
+
+    if (opcion == 1) :
+        temporal = "-C."
+    else :
+        temporal = "-D."
+
+
+    # Creamos y guardamos el nombre de salida y hacemos lo mismo para el de entrada
+    archivo_salida = nombre_temporal[0] + temporal + nombre_temporal[1]
+
+    archivo_entrada =  "/".join(ruta_separada[:-1]) + "/" + archivo_entrada
+    archivo_salida =  "/".join(ruta_separada[:-1]) + "/" + archivo_salida
 
 
     if (extension == "txt") :
         if (opcion == 1) :
-            texto.encrypt_file(nombre_archivo_entrada, nombre_archivo[0] + "-C." + nombre_archivo[1])
+            texto.cifrar_archivo(archivo_entrada, archivo_salida)
             messagebox.showinfo("Proceso Completado","Cifrado Realizado")
             menu()
         else :
-            texto.decrypt_file(nombre_archivo_entrada, nombre_archivo[0] + "-D." + nombre_archivo[1])
+            texto.decifrar_archivo(archivo_entrada, archivo_salida)
             messagebox.showinfo("Proceso Completado","Decifrado Realizado")
             menu()
 
     elif (extension == "bmp") :
-        print("asndasjkdnasjd")
+        if (opcion == 1) :
+            imagen.cifrar_imagen(archivo_entrada, archivo_salida)
+            messagebox.showinfo("Proceso Completado","Cifrado Realizado")
+            menu()
+        else :
+            imagen.decifrar_imagen(archivo_entrada, archivo_salida)
+            messagebox.showinfo("Proceso Completado","Decifrado Realizado")
+            menu()
 
     else :
-        print("22")
-        window.destroy()
+        messagebox.showerror("Error archivo","Formato de archivo no soportado")
+        menu()
         return ''
+
+
 
 
 def pedir_archivo() :
     # Show the file dialog and get the selected file path
     global ruta_archivo 
     ruta_archivo= filedialog.askopenfilename()
+
+    if len(ruta_archivo) == 0 :
+        menu()
+        return ''
 
     nombre_archivo = ruta_archivo.split('/')
     nombre_archivo = nombre_archivo[len(nombre_archivo) - 1]
@@ -73,7 +111,6 @@ def pedir_archivo() :
     # Create the second button and add it below the first button
     descifrado_boton = tk.Button(window, width=35, height=3, text="Descifrar", command=lambda:seleccionar_cifrado_descifrado(2, ruta_archivo))
     descifrado_boton.pack(side="left", expand=True)
-
 
 def menu():
     limpiar_pantalla()
