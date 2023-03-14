@@ -34,13 +34,12 @@ def decrypt_file(input_file, output_file):
             f_out.write(plaintext)
 
 
-print("File name : ")
-nombre_archivo = input()
-
-nuevo_nombre = nombre_archivo.split('.')
-nuevo_nombre[0] = nuevo_nombre[0] + "-c."
-nuevo_nombre = "".join(nuevo_nombre)
+def cifrar(nombre_archivo) :
+    nuevo_nombre = nombre_archivo.split('.')
+    nuevo_nombre[0] = nuevo_nombre[0] + "-c."
+    nuevo_nombre = "".join(nuevo_nombre)
 
 
-encrypt_file(nombre_archivo, nuevo_nombre)
-decrypt_file(nuevo_nombre, "decrifrar.txt")
+    encrypt_file(nombre_archivo, nuevo_nombre)
+
+    decrypt_file(nuevo_nombre, "decrifrar.txt")
