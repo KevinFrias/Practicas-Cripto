@@ -8,6 +8,7 @@ import threading
 import time
 
 import ECB
+import CBC
 
 
 # Creamos la ventana de la aplicacion
@@ -21,32 +22,61 @@ def limpiar_pantalla() :
     for widgets in window.winfo_children():
         widgets.destroy()
 
-def seleccionar_cifrado_descifrado(action, option, ruta, llave, ruta_archivo) : 
+
+
+
+def realizar_accion(action, option, llave, vector0, ruta_archivo, nueva_ruta_archivo) : 
+
+    llave = bytes(llave.encode("utf-8"))
+    vector0 = bytes(vector0.encode("utf-8"))
 
     if option == "ECB":
-
+        if action == "e" :
+            ECB.cifrar(llave, ruta_archivo, nueva_ruta_archivo)
+            print("Cypher Done")
+        else :
+            ECB.descifrar(llave, ruta_archivo, nueva_ruta_archivo)
+            print("Descypher Done")
 
     if option == "CBC":
+        if action == "e" :
+            CBC.cifrar(llave, vector0, ruta_archivo, nueva_ruta_archivo)
+            print("Cypher Done")
+        else :
+            CBC.descifrar(llave, vector0, ruta_archivo, nueva_ruta_archivo)
+            print("Descypher Done")
 
 
+
+    '''
     if option == "CBF":
 
 
     if option == "OBF":
+    '''
 
-
-def action_handler(action, option, llave, vector0, ruta_archivo):
+def obtener_nuevo_archivo(action, option, ruta_archivo) :
     nombre_archivo = ruta_archivo.split('/')
-    nombre_archivo = nombre_archivo[len(nombre_archivo) - 1]
+    nombre_archivo = nombre_archivo[-1]
 
     nueva_ruta = ruta_archivo.split(nombre_archivo)
 
     nombre_archivo = nombre_archivo.split('.')
 
     nuevo_archivo = nombre_archivo[0] + "_" + action + option + "." + nombre_archivo[1]
+
     nueva_ruta[0]+=nuevo_archivo
 
-    print(nueva_ruta[0])
+    return (nueva_ruta[0])
+
+
+
+def action_handler(action, option, llave, vector0, ruta_archivo):
+    nueva_ruta = obtener_nuevo_archivo(action, option, ruta_archivo)    
+
+    realizar_accion(action, option, llave, vector0, ruta_archivo, nueva_ruta)
+
+    menu("","","",0)
 
 
 
@@ -60,22 +90,19 @@ def pedir_datos(llave, vector0, ruta_archivo) :
     cypher_action = tk.StringVar(value="e")
 
     # Create a frame to hold the radio buttons
-    frame_cypher_action = tk.Frame(window, width=300)
+    frame_cypher_action = tk.Frame(window)
 
     # Create the radio buttons inside the frame
-    option1_a = tk.Radiobutton(frame_cypher_action, width=25, height=3, text="Cifrado", font='helvetica 14', variable=cypher_action, value="e")
-    option2_a = tk.Radiobutton(frame_cypher_action, width=25, height=3, text="Descifrado", font='helvetica 14', variable=cypher_action, value="d")
+    option1_a = tk.Radiobutton(frame_cypher_action, width=25, height=3, text="Cifrado", font='helvetica 16', variable=cypher_action, value="e")
+    option2_a = tk.Radiobutton(frame_cypher_action, width=25, height=3, text="Descifrado", font='helvetica 16', variable=cypher_action, value="d")
 
     # Pack the radio buttons into the frame
     option1_a.pack()
     option2_a.pack()
 
     # Pack the frame into the window
-    frame_cypher_action.pack(side=tk.LEFT, padx=(50,0), pady=(50,300))
+    frame_cypher_action.pack(side=tk.LEFT, padx=(10,0), pady=(0,0))
     # --------------------------------------------------------------------------
-
-
-
 
 
     # --------------------------------------------------------------------------
@@ -84,13 +111,13 @@ def pedir_datos(llave, vector0, ruta_archivo) :
     cypher_option = tk.StringVar(value="ECB")
 
     # Create a frame to hold the radio buttons
-    frame_cypher_option = tk.Frame(window, width=300)
+    frame_cypher_option = tk.Frame(window)
 
     # Create the radio buttons inside the frame
-    option1 = tk.Radiobutton(frame_cypher_option, width=25, height=3, text="ECB", font='helvetica 14', variable=cypher_option, value="ECB")
-    option2 = tk.Radiobutton(frame_cypher_option, width=25, height=3, text="CBC", font='helvetica 14', variable=cypher_option, value="CBC")
-    option3 = tk.Radiobutton(frame_cypher_option, width=25, height=3, text="CFB", font='helvetica 14', variable=cypher_option, value="CFB")
-    option4 = tk.Radiobutton(frame_cypher_option, width=25, height=3, text="OFB", font='helvetica 14', variable=cypher_option, value="OFB")
+    option1 = tk.Radiobutton(frame_cypher_option, width=25, height=3, text="ECB", font='helvetica 16', variable=cypher_option, value="ECB")
+    option2 = tk.Radiobutton(frame_cypher_option, width=25, height=3, text="CBC", font='helvetica 16', variable=cypher_option, value="CBC")
+    option3 = tk.Radiobutton(frame_cypher_option, width=25, height=3, text="CFB", font='helvetica 16', variable=cypher_option, value="CFB")
+    option4 = tk.Radiobutton(frame_cypher_option, width=25, height=3, text="OFB", font='helvetica 16', variable=cypher_option, value="OFB")
 
     # Pack the radio buttons into the frame
     option1.pack()
@@ -99,7 +126,7 @@ def pedir_datos(llave, vector0, ruta_archivo) :
     option4.pack()
 
     # Pack the frame into the window
-    frame_cypher_option.pack(side=tk.RIGHT, padx=(0,80), pady=(50,300))
+    frame_cypher_option.pack(side=tk.RIGHT, padx=(0,10), pady=(0,0))
     # --------------------------------------------------------------------------
 
 

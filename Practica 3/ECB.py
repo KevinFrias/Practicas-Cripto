@@ -1,31 +1,40 @@
 from Crypto.Cipher import AES
-import base64
 
-# Definir la clave de cifrado y el mensaje a cifrar
-key = b'mi_clave_secreta_'
-message = b'mi mensaje secreto'
+def cifrar(llave, archivo_entrada, archivo_salida):
+    # Open the input and output files
+    with open(archivo_entrada, 'rb') as entrada, open(archivo_salida, 'wb') as salida:
+        # Create the AES cipher with ECB mode
+        cipher = AES.new(llave, AES.MODE_ECB)
+        
+        # Read and encrypt the file in chunks of 16 bytes (AES block size)
+        while True:
+            bloque = entrada.read(16)
+            # Si es que ya acabamos de leer el archivo podemos acabar el ciclo
+            if len(bloque) == 0:
+                break
 
-# Rellenar el mensaje si no es un múltiplo de 16 bytes
-# (esto es necesario para usar AES en modo ECB)
-padding_length = 16 - (len(message) % 16)
-message += bytes([padding_length]) * padding_length
+            # Si el bloque que leemos no es divisble entre 16 le agregamos un padding
+            elif len(bloque) % 16 != 0:
+                # En este caso le agregamos espacios
+                bloque += b' ' * (16 - len(bloque) % 16)
+            
+            # Escribimos el blqque cifrado al archivo de salida
+            salida.write(cipher.encrypt(bloque))
 
-# Crear el objeto de cifrado AES en modo ECB
-cipher = AES.new(key, AES.MODE_ECB)
 
-# Cifrar el mensaje
-ciphertext = cipher.encrypt(message)
+def descifrar(llave, archivo_entrada, archivo_salida):
+    # Open the input and output files
 
-# Codificar el resultado en base64 para facilitar su lectura
-encoded_ciphertext = base64.b64encode(ciphertext)
-print("Mensaje cifrado:", encoded_ciphertext)
+    with open(archivo_entrada, 'rb') as entrada, open(archivo_salida, 'wb') as salida:
+        # Create the AES cipher with ECB mode
+        cipher = AES.new(llave, AES.MODE_ECB)
+        
+        # Read and decrypt the file in chunks of 16 bytes (AES block size)
+        while True:
+            bloque = entrada.read(16)
 
-# Descifrar el mensaje
-decrypted_message = cipher.decrypt(ciphertext)
-
-# Eliminar el relleno agregado previamente
-padding_length = decrypted_message[-1]
-decrypted_message = decrypted_message[:-padding_length]
-
-# Mostrar el mensaje descifrado
-print("Mensaje descifrado:", decrypted_message)
+            if len(bloque) == 0:
+                break
+            
+            bloque_descifrado = cipher.decrypt(bloque)
+            salida.write(bloque_descifrado.strip())
