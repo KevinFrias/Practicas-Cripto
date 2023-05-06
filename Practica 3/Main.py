@@ -9,7 +9,8 @@ import time
 
 import ECB
 import CBC
-
+import CFB
+import OBF
 
 # Creamos la ventana de la aplicacion
 window = tk.Tk()
@@ -46,7 +47,21 @@ def realizar_accion(action, option, llave, vector0, ruta_archivo, nueva_ruta_arc
             CBC.descifrar(llave, vector0, ruta_archivo, nueva_ruta_archivo)
             print("Descypher Done")
 
+    if option == "CFB":
+        if action == "e" :
+            CFB.cifrar(llave, vector0, ruta_archivo, nueva_ruta_archivo)
+            print("Cypher Done")
+        else :
+            CFB.descifrar(llave, vector0, ruta_archivo, nueva_ruta_archivo)
+            print("Descypher Done")
 
+    if option == "OFB":
+        if action == "e" :
+            OBF.cifrar(llave, vector0, ruta_archivo, nueva_ruta_archivo)
+            print("Cypher Done")
+        else :
+            OBF.descifrar(llave, vector0, ruta_archivo, nueva_ruta_archivo)
+            print("Descypher Done")
 
     '''
     if option == "CBF":
