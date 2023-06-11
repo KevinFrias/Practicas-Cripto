@@ -1,0 +1,36 @@
+  '''
+    global archivo
+
+    if opcion > 2 :
+        # Pedimos el archivo con el que vamos a trabajar
+        archivo = filedialog.askopenfilename()
+        opcion -= 2
+
+    # Dentro de la pantalla para poder pedir las llaves, mostramos el nombre del archivo con el que estamos trabajando
+    archivo_nombre = tk.Label(window, height = 2, text = archivo.split('/')[-1], font='Helvetica 16 bold')
+    archivo_nombre.pack(side=tk.TOP)
+
+    # Como esta pantalla tambien es mostrada para ambos modos de operacion, hacemos uso de una variable
+    mensaje_opcion = "cifrado" if opcion == 1 else "descifrado"
+
+    # Creamos el titulo para poder comunicar correctamente que es lo que se busca hacer dentro de esta pantall
+    titulo = tk.Label(window, height = 3, text = "LLave para el " + mensaje_opcion, font='helvetica 14')
+    titulo.pack(side=tk.TOP)
+
+    # Mensaje para poder comunicar de que dentro del programa la prioridad es dada al archivo de la llave
+    mensaje_label = tk.Label(window, height = 3, text = "Prioridad dada al archivo*", font='helvetica 11', fg='#af0000')
+    mensaje_label.pack(side=tk.TOP, pady=(0, 10))
+
+    # En caso de que se quiera poner la llave directamente, tambien es posible
+    llave = tk.Text(window, height = 1, width = 25,bg = "white", font=('Georgia 18') )
+    llave.insert("0.0", "")
+    llave.pack(side= tk.TOP, pady=(5, 20))
+
+    # Creamos el boton para que sea seleccionado, sea el caso, la llave para la continuacion del programa
+    llave_boton = tk.Button(window, width=35, height=2, text="Seleccionar llave", bg='#cccccc', command=lambda:(pedir_archivo(opcion)))
+    llave_boton.pack(side=tk.TOP)
+
+    # En caso de que sea seleccionado el boton de la seleccion del archivo para la llave, mostramos el nombre del archivo
+    nombre_archivo = tk.Label(window, height = 3, text = archivo_llave.split('/')[-1], font='helvetica 14')
+    nombre_archivo.pack(side=tk.TOP, pady=(0, 10))
+    '''

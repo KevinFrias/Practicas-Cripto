@@ -63,12 +63,6 @@ def realizar_accion(action, option, llave, vector0, ruta_archivo, nueva_ruta_arc
             OBF.descifrar(llave, vector0, ruta_archivo, nueva_ruta_archivo)
             print("Descypher Done")
 
-    '''
-    if option == "CBF":
-
-
-    if option == "OBF":
-    '''
 
 def obtener_nuevo_archivo(action, option, ruta_archivo) :
     nombre_archivo = ruta_archivo.split('/')
