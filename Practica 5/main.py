@@ -23,6 +23,7 @@ import cryptography
 import rsa
 import binascii
 import base64
+import os
 
 # Creamos la ventana de la aplicacion
 window = tk.Tk()
@@ -54,17 +55,16 @@ def iniciar_proceso(opcion, archivo_texto, archivo_llave, archivo_llave_B):
     string_contenido = ''.join(contenido)
 
     if opcion == 2 :
-        hash_opcional = string_contenido[-344:]
-        string_contenido = string_contenido[:-344]
+        hash_opcional = string_contenido[-688:]
+        string_contenido = string_contenido[:-688]
 
     hash_contenido = hashlib.sha1(string_contenido.encode())
     hash_contenido = hash_contenido.hexdigest()
 
-    llave = ""
-
     # 1 -> Cifrar
 
     if opcion == 1:
+        llave = ''
         # Abrimos el archivo de la llave
         with open (archivo_llave, 'rb') as f:
             llave = serialization.load_pem_private_key(
@@ -72,8 +72,6 @@ def iniciar_proceso(opcion, archivo_texto, archivo_llave, archivo_llave_B):
                 password=None,
                 backend=default_backend()
             )
-
-        firma_digital = ''
 
         firma_digital = llave.sign(
             hash_contenido.encode('utf-8'),
@@ -84,46 +82,49 @@ def iniciar_proceso(opcion, archivo_texto, archivo_llave, archivo_llave_B):
             hashes.SHA256()
         )
 
-        #Asignamos el valor del la firma digita
-        firma_digital = firma_digital[:32]
-
-        # Abrimos el archivo de salida
-        output = open("salida.txt", "w")
-
         #######################################################################
+        # Definimos el valor de la llave
+        llave = firma_digital[:24]
+
         # Definimos el valor del vector de inicializacion
         iv = firma_digital[:16]
 
+        mensaje_cifrado_base64 = ''
+
         # Creamos el objeto para cifrar usando AES en modo CBC ocupando la mismo iv y llave 
-        cipher = AES.new(firma_digital, AES.MODE_CBC, iv)
+        cipher = AES.new(llave, AES.MODE_CBC, iv)
 
         # Ciframos todo el contenido del archivo
-        for i in contenido :
-            string_contenido_temporal = i.encode('utf-8')
-            mensaje_cifrado = cipher.encrypt(pad(string_contenido_temporal, AES.block_size))
-            mensaje_cifrado_base64 = base64.b64encode(mensaje_cifrado).decode('utf-8')
+        mensaje_cifrado = pad(string_contenido.encode('utf-8'), AES.block_size)
+        mensaje_cifrado = cipher.encrypt(mensaje_cifrado)
 
-            output.write(mensaje_cifrado_base64)
-            #print(mensaje_cifrado_base64)
+        mensaje_cifrado_base64 = base64.b64encode(mensaje_cifrado).decode('utf-8')
 
         #######################################################################
 
-        # Creamos el archivo de la llave publica B
+        firma1 = firma_digital[:128]
+        firma2 = firma_digital[128:256]
+
+       # Creamos el archivo de la llave publica B
         llave_B = ''
 
         # Abrimos el archivo de la llave publica de B
         with open(archivo_llave_B, "rb") as f:
             llave_B = RSA.import_key(f.read())
 
-        # Ciframos el mensaje
         cipher_rsa = PKCS1_OAEP.new(llave_B)
-        firma_digital_rsa = cipher_rsa.encrypt(firma_digital)
 
-        # Lo pasamos a base 64
-        firma_digital_base64 = base64.b64encode(firma_digital_rsa).decode('utf-8')
 
-        # Lo escribrimos dentro del archivo
-        output.write(firma_digital_base64)
+        firma1_rsa = cipher_rsa.encrypt(firma1)
+        firma1_b64 = base64.b64encode(firma1_rsa).decode('utf-8')
+
+        firma2_rsa = cipher_rsa.encrypt(firma2)
+        firma2_b64 = base64.b64encode(firma2_rsa).decode('utf-8')
+
+        # Abrimos el archivo de salida
+        output = open("salida.txt", "w")
+
+        output.write(mensaje_cifrado_base64 + firma1_b64 + firma2_b64)
 
         # Cerramos el archivo
         output.close()
@@ -134,37 +135,70 @@ def iniciar_proceso(opcion, archivo_texto, archivo_llave, archivo_llave_B):
         return ''
 
     else :
+        # La llave que se utilizo para cifrar el mensaje esta en lo ultimo del archivo
+
+        firma1 = hash_opcional[:-344]
+        firma2 = hash_opcional[-344:]
+
+        firma1 = base64.b64decode(firma1)
+        firma2 = base64.b64decode(firma2)
         
+        llave_B = ''
+
+        # Leemos la llave privada de B
+        with open(archivo_llave_B, "rb") as f:
+            llave_B = RSA.import_key(f.read())
+        
+        # Desciframos lo ultimo del mensaje para poder poder obtener la firma digital
+        cipher_rsa = PKCS1_OAEP.new(llave_B)
+
+        firma1 = cipher_rsa.decrypt(firma1)
+        firma2 = cipher_rsa.decrypt(firma2)
+
+        firma_digital = firma1 + firma2
+
+        # Desciframos lo ultimo del mensaje para poder poder obtener la firma digital
+        cipher_rsa = PKCS1_OAEP.new(llave_B)
+        llave = firma_digital[:24]
+        iv = firma_digital[:16]
+
+        cipher = AES.new(llave, AES.MODE_CBC, iv)
+        mensaje = ''
+
+        mensaje_cifrado = base64.b64decode(string_contenido)
+        mensaje = cipher.decrypt(mensaje_cifrado)
+        mensaje = unpad(mensaje, AES.block_size).decode('utf-8')
+
+        hash0 = hashlib.sha1(mensaje.encode())
+        hash0 = hash0.hexdigest().encode('utf-8')
+
+        llave_A = ''
+
         with open(archivo_llave, 'rb') as key_file:
-            llave = serialization.load_pem_public_key(
+            llave_A = serialization.load_pem_public_key(
                 key_file.read(),
                 backend=default_backend()
             )
 
-        hash_opcional = binascii.unhexlify(hash_opcional)
-        hash_contenido = bytes(hash_contenido.encode('utf-8'))
-
-        bandera = False
-
         try :
-            mensaje = llave.verify(
-                hash_opcional,
-                hash_contenido,
+            llave_A.verify(
+                firma_digital,
+                hash0,
                 padding.PSS(
                     mgf=padding.MGF1(hashes.SHA256()),
                     salt_length=padding.PSS.MAX_LENGTH
                     ),
                 hashes.SHA256()
             )
+
             messagebox.showinfo(message="Correcto :)", title="Good")
             menu()
             return ''
+            
         except Exception :
             messagebox.showerror(message="Error :(", title="Error")
             menu()
             return ''
-
-
 
 def pedir_archivo(opcion, archivo_texto, archivo_llave, archivo_llave2, tipo_archivo):
     ruta_archivo = filedialog.askopenfilename()
@@ -180,6 +214,8 @@ def pedir_informacion(opcion, archivo_texto, archivo_llave, archivo_llave2):
 
     # Limpiamos la pantalla de los demas widgets para poder mostrar correctamente esta pantalla
     limpiar_pantalla()
+    window.title("Generacion" if opcion == 1 else "Verificacion")
+
 
     # Creamos el boton para que sea seleccionado, sea el caso, la llave para la continuacion del programa
     archivo_texto_boton = tk.Button(window, width=35, height=3, text="Seleccionar archivo", bg='#cccccc', command=lambda:(pedir_archivo(opcion, archivo_texto, archivo_llave, archivo_llave2, 1)))
@@ -190,7 +226,7 @@ def pedir_informacion(opcion, archivo_texto, archivo_llave, archivo_llave2):
     nombre_archivo_texto.pack(side=tk.TOP, pady=(0, 10))
 
     # Creamos el boton para que sea seleccionado, sea el caso, la llave para la continuacion del programa
-    llave_boton = tk.Button(window, width=35, height=3, text="Seleccionar llave " + "privada" if opcion == 1 else "publica", bg='#cccccc', command=lambda:(pedir_archivo(opcion, archivo_texto, archivo_llave, archivo_llave2, 2)))
+    llave_boton = tk.Button(window, width=35, height=3, text="Seleccionar llave " + ("privada A" if opcion == 1 else "publica A"), bg='#cccccc', command=lambda:(pedir_archivo(opcion, archivo_texto, archivo_llave, archivo_llave2, 2)))
     llave_boton.pack(side=tk.TOP, pady=(10, 0))
 
     # En caso de que sea seleccionado el boton de la seleccion del archivo para la llave, mostramos el nombre del archivo
@@ -198,7 +234,7 @@ def pedir_informacion(opcion, archivo_texto, archivo_llave, archivo_llave2):
     nombre_archivo_llave.pack(side=tk.TOP, pady=(0, 10))
     
     # Creamos el boton para que sea seleccionado, sea el caso, la llave para la continuacion del programa
-    llave_boton2 = tk.Button(window, width=35, height=3, text="Seleccionar llave "  + "publica" if opcion == 1 else "privada" , bg='#cccccc', command=lambda:(pedir_archivo(opcion, archivo_texto, archivo_llave, archivo_llave2, 3)))
+    llave_boton2 = tk.Button(window, width=35, height=3, text="Seleccionar llave "  + ("publica B" if opcion == 1 else "privada B") , bg='#cccccc', command=lambda:(pedir_archivo(opcion, archivo_texto, archivo_llave, archivo_llave2, 3)))
     llave_boton2.pack(side=tk.TOP, pady=(10, 0))
 
     # En caso de que sea seleccionado el boton de la seleccion del archivo para la llave, mostramos el nombre del archivo
@@ -207,7 +243,7 @@ def pedir_informacion(opcion, archivo_texto, archivo_llave, archivo_llave2):
     
 
     # Creamos el boton para dar comienzo al proceso del programa
-    ok_boton = tk.Button(window, width=35, height=3, text="OK", bg='#cccccc', command=lambda:(iniciar_proceso(opcion, archivo_texto, archivo_llave, archivo_llave)))
+    ok_boton = tk.Button(window, width=35, height=3, text="OK", bg='#cccccc', command=lambda:(iniciar_proceso(opcion, archivo_texto, archivo_llave, archivo_llave2)))
     ok_boton.pack(side=tk.BOTTOM, pady=(0, 10))
     return ''
 
@@ -220,6 +256,7 @@ def limpiar_pantalla() :
 
 def menu():
     limpiar_pantalla()
+    window.title("Generacion y Verificacion")
 
     # Create the second button and add it below the first button
     archivo_boton = tk.Button(window, width=35, height=3, text="Generar mensaje", command=lambda:(pedir_informacion(1, "", "", "")))
