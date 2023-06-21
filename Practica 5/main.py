@@ -191,6 +191,15 @@ def iniciar_proceso(opcion, archivo_texto, archivo_llave, archivo_llave_B):
                 hashes.SHA256()
             )
 
+            # Abrimos el archivo de salida
+            output = open("salida_2.txt", "w")
+
+            # Escribimos el mensaje en el archivo de salida
+            output.write(mensaje)
+
+            # Cerramos el archivo
+            output.close()
+
             messagebox.showinfo(message="Correcto :)", title="Good")
             menu()
             return ''

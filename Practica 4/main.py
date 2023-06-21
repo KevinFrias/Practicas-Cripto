@@ -19,7 +19,7 @@ import hashlib
 import ast
 import cryptography
 import rsa
-import binascii
+import base64
 
 # Creamos la ventana de la aplicacion
 window = tk.Tk()
@@ -71,13 +71,14 @@ def iniciar_proceso(opcion, archivo_texto, archivo_llave):
     llave = ""
 
     if opcion == 1:
+
         with open (archivo_llave, 'rb') as f:
             llave = serialization.load_pem_private_key(
                 f.read(),
                 password=None,
                 backend=default_backend()
             )
-        
+
         hash_contenido_RSA = hash_contenido.encode('utf-8')
 
         hash_contenido_RSA = llave.sign(
@@ -89,9 +90,8 @@ def iniciar_proceso(opcion, archivo_texto, archivo_llave):
             hashes.SHA256()
         )
 
-
-        hash_contenido_RSA = hash_contenido_RSA.hex()
-
+        hash_contenido_RSA = base64.b64encode(hash_contenido_RSA).decode('utf-8')
+        
         output = open("salida.txt", "w")
 
         for i in contenido :
@@ -114,10 +114,8 @@ def iniciar_proceso(opcion, archivo_texto, archivo_llave):
                 backend=default_backend()
             )
 
-        hash_opcional = binascii.unhexlify(hash_opcional)
+        hash_opcional = base64.b64decode(hash_opcional)
         hash_contenido = bytes(hash_contenido.encode('utf-8'))
-
-        bandera = False
 
         try :
             mensaje = llave.verify(
